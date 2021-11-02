@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 
 from argparse import ArgumentParser
-from utils import get_mnist_data_loaders, DataLoaderProgress
+from utils import get_mnist_data_loaders, DataLoaderProgress, NN_FC_CrossEntropy
 from fastprogress.fastprogress import master_bar, progress_bar
 import torch
+
+# check
 
 
 def train_one_epoch(dataloader, model, criterion, optimizer, device, mb):
@@ -21,9 +23,26 @@ def train_one_epoch(dataloader, model, criterion, optimizer, device, mb):
 
         # TODO:
         # - zero-out gradients
+        model.zero_grad()
         # - compute new gradients
-        # - update paramters
-        ...
+        loss.backward()
+
+        # Ask question
+        learning_rate = 1e-2
+        weight_decay = 1e-3
+        momentum = 0.9
+
+        """
+        params = ()
+        opmizer = torch.optim.SGD(params, lr=learning_rate)
+        """
+
+        # - update paramaters
+        with torch.no_grad():
+            for param, grad_ema in zip(model.parameters(), model.grad_emas):
+                grad_ema.set_(momentum * grad_ema +
+                              (1 - momentum) * param.grad)
+                param -= learning_rate * grad_ema + weight_decay * param
 
 
 def validate(dataloader, model, criterion, device, epoch, num_epochs, mb):
@@ -47,8 +66,11 @@ def validate(dataloader, model, criterion, device, epoch, num_epochs, mb):
 
             # TODO:
             # - compute loss
+            loss += criterion(output, Y).item()
+
             # - compute the number of correctly classified examples
-            ...
+            num_correct += (output.argmax(1) ==
+                            Y).type(torch.float).sum().item()
 
         loss /= num_batches
         accuracy = num_correct / N
@@ -98,13 +120,16 @@ def main():
     # TODO: create a new model
     # Your model can be as complex or simple as you'd like. It must work
     # with the other parts of this script.
-    model = ...
+    nx = train_loader.dataset.data.shape[1:].numel()
+    ny = len(train_loader.dataset.classes)
+    layer_sizes = (nx, 10, 10, ny)
+    model = NN_FC_CrossEntropy(layer_sizes).to(device)
 
     # TODO:
     # - create a CrossEntropyLoss criterion
     # - create an optimizer of your choice
-    criterion = ...
-    optimizer = ...
+    criterion = torch.nn.CrossEntropyLoss()
+    optimizer = torch.optim.SGD
 
     train(
         model, criterion, optimizer, train_loader, valid_loader, device, args.num_epochs
