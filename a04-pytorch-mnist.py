@@ -20,29 +20,12 @@ def train_one_epoch(dataloader, model, criterion, optimizer, device, mb):
         # Compute model output and then loss
         output = model(X)
         loss = criterion(output, Y)
-
-        # TODO:
         # - zero-out gradients
-        model.zero_grad()
+        optimizer.zero_grad()
         # - compute new gradients
         loss.backward()
-
-        # Ask question
-        learning_rate = 1e-2
-        weight_decay = 1e-3
-        momentum = 0.9
-
-        """
-        params = ()
-        opmizer = torch.optim.SGD(params, lr=learning_rate)
-        """
-
         # - update paramaters
-        with torch.no_grad():
-            for param, grad_ema in zip(model.parameters(), model.grad_emas):
-                grad_ema.set_(momentum * grad_ema +
-                              (1 - momentum) * param.grad)
-                param -= learning_rate * grad_ema + weight_decay * param
+        optimizer.step()
 
 
 def validate(dataloader, model, criterion, device, epoch, num_epochs, mb):
@@ -119,17 +102,18 @@ def main():
 
     # TODO: create a new model
     # Your model can be as complex or simple as you'd like. It must work
-    # with the other parts of this script.
-    nx = train_loader.dataset.data.shape[1:].numel()
-    ny = len(train_loader.dataset.classes)
-    layer_sizes = (nx, 10, 10, ny)
-    model = NN_FC_CrossEntropy(layer_sizes).to(device)
+    # with the other parts of this script.)
+    model = torch.nn.Sequential(
+        torch.nn.Flatten(),
+        torch.nn.Linear(748, 100),
+        torch.nn.ReLU(),
+        torch.nn.Linear(100, 10))
 
     # TODO:
     # - create a CrossEntropyLoss criterion
     # - create an optimizer of your choice
     criterion = torch.nn.CrossEntropyLoss()
-    optimizer = torch.optim.SGD
+    optimizer = torch.optim.SGD(model.parameters(), args.learning_rate)
 
     train(
         model, criterion, optimizer, train_loader, valid_loader, device, args.num_epochs
