@@ -1,13 +1,11 @@
 #!/usr/bin/env python
 
 from argparse import ArgumentParser
-from utils import get_mnist_data_loaders, DataLoaderProgress, NN_FC_CrossEntropy
+from utils import get_mnist_data_loaders, DataLoaderProgress
 from fastprogress.fastprogress import master_bar, progress_bar
 import torch
 
-# check
-
-
+#check
 def train_one_epoch(dataloader, model, criterion, optimizer, device, mb):
 
     # Put the model into training mode
@@ -50,10 +48,9 @@ def validate(dataloader, model, criterion, device, epoch, num_epochs, mb):
             # TODO:
             # - compute loss
             loss += criterion(output, Y).item()
-
+            
             # - compute the number of correctly classified examples
-            num_correct += (output.argmax(1) ==
-                            Y).type(torch.float).sum().item()
+            num_correct += (output.argmax(1) == Y).type(torch.float).sum().item()
 
         loss /= num_batches
         accuracy = num_correct / N
@@ -103,11 +100,11 @@ def main():
     # TODO: create a new model
     # Your model can be as complex or simple as you'd like. It must work
     # with the other parts of this script.)
-    model = torch.nn.Sequential(
-        torch.nn.Flatten(),
-        torch.nn.Linear(748, 100),
-        torch.nn.ReLU(),
-        torch.nn.Linear(100, 10))
+    model  = torch.nn.Sequential(
+            torch.nn.Flatten(),
+            torch.nn.Linear(784, 28),
+            torch.nn.ReLU(),
+            torch.nn.Linear(28, 10))
 
     # TODO:
     # - create a CrossEntropyLoss criterion
